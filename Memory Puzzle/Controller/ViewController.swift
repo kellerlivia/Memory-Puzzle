@@ -23,6 +23,19 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         makeTiles()
+        randomize()
+    }
+    
+    func randomize () {
+        
+        var tempCenArray = centersArray
+        for anyTiles in tilesArray {
+            
+            let ranIndex: Int = Int(arc4random_uniform(UInt32(tempCenArray.count)))
+            let randomCenter = tempCenArray[ranIndex]
+            anyTiles.center = randomCenter
+            tempCenArray.remove(at: ranIndex)
+        }
     }
     
     func makeTiles () {
