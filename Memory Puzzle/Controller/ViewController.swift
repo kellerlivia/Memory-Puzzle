@@ -16,17 +16,19 @@ class ViewController: UIViewController {
     var gameMode: Int = 4
     var tileSize: CGFloat!
     
-    var tilesArray: Array <MyLabel> = []
+    var tilesArray: Array <MyImage> = []
     var centersArray: Array <CGPoint> = []
     
     var gameTime: Int = 0
     var gameTimer: Timer!
     
-    var firstTile: MyLabel!
-    var secondTile: MyLabel!
+    var firstTile: MyImage!
+    var secondTile: MyImage!
     var compareNow = false
     
-    var foundTilesArray: Array <MyLabel> = []
+    var foundTilesArray: Array <MyImage> = []
+    
+    var aTileIsAnimating = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,33 +36,54 @@ class ViewController: UIViewController {
         makeTiles()
         randomize()
         updateTime()
+        
         gameWonLabel.isHidden = true
+ 
     }
     
     @IBAction func resetAction(_ sender: UIButton) {
-        
-        gameTime = 0
-        foundTilesArray = []
-        
-        for a in tilesArray {
-            a.removeFromSuperview()
-        }
-        makeTiles()
-        randomize()
-        updateTime()
+        resetActionFunction()
     }
     
     @IBAction func gameModelAction(_ sender: UISegmentedControl) {
         
+        let index = sender.selectedSegmentIndex
+        
+        switch index {
+        case 0:
+            gameMode = 4
+        case 1:
+            gameMode = 6
+        case 2:
+            gameMode = 8
+        default:
+            break
+        }
+        
+        resetActionFunction()
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        if (aTileIsAnimating) {
+            return
+        }
+        
         let myTouch = touches.first
         
-        if let tappedTile = myTouch?.view as? MyLabel {
+        if let tappedTile = myTouch?.view as? MyImage {
+            
+            if (foundTilesArray.contains(tappedTile)) {
+                return
+            }
+            
+            aTileIsAnimating = true
             
             if (compareNow) {
+                if (tappedTile == firstTile) {
+                    aTileIsAnimating = false
+                    return
+                }
                 secondTile = tappedTile
                 revealAndCompare(inpTile: tappedTile)
             } else {
@@ -107,10 +130,7 @@ extension ViewController {
             // for que vai adicionando as cartas na horizontal
             for _ in 0..<gameMode {
                 
-                let tile = MyLabel (frame: CGRect(origin: CGPoint.zero, size: tileCgSize))
-                
-                tile.font = UIFont.systemFont(ofSize: 50, weight: UIFont.Weight.bold)
-                tile.textAlignment = NSTextAlignment.center
+                let tile = MyImage (frame: CGRect(origin: CGPoint.zero, size: tileCgSize))
                 
                 let tileCen = CGPoint(x: xCen, y: yCen)
                 
@@ -120,7 +140,12 @@ extension ViewController {
                 
                 tile.isUserInteractionEnabled = true
                 tile.internalNum = counter
-                tile.text = "\(MyLabel.question)"
+                
+                let imgName = String(format: "img_%02d.jpg", counter)
+                tile.internalImage = UIImage (named: imgName)
+                
+                tile.image = MyImage.question
+
                 
                 tilesArray.append(tile)
                 centersArray.append(tileCen)
@@ -130,7 +155,6 @@ extension ViewController {
                 tile.center = tileCen
                 xCen += tileSize
                 
-                tile.backgroundColor = UIColor.blue
                 gameView.addSubview(tile)
             }
             
@@ -174,19 +198,24 @@ extension ViewController {
 
 extension ViewController {
     
-    func flipToReveal (inpTile: MyLabel) {
-        UIView.transition(with: inpTile, duration: 0.5, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
-            inpTile.backgroundColor = UIColor.green
-            inpTile.text = "\(inpTile.internalNum!)"
-        }, completion: nil)
+    func flipToReveal (inpTile: MyImage) {
+        UIView.transition(with: inpTile, duration: 0.6, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
+//            inpTile.backgroundColor = UIColor.green
+            inpTile.image = inpTile.internalImage
+//            inpTile.text = "\(inpTile.internalNum!)"
+        }, completion: {(res) in
+            self.aTileIsAnimating = false
+        })
     }
     
-    func revealAndCompare (inpTile: MyLabel) {
-        UIView.transition(with: inpTile, duration: 0.5, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
-            inpTile.backgroundColor = UIColor.green
-            inpTile.text = "\(inpTile.internalNum!)"
+    func revealAndCompare (inpTile: MyImage) {
+        UIView.transition(with: inpTile, duration: 0.6, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
+//            inpTile.backgroundColor = UIColor.green
+            inpTile.image = inpTile.internalImage
+//            inpTile.text = "\(inpTile.internalNum!)"
         }, completion: {(res) in
             self.compare()
+            self.aTileIsAnimating = true
         })
     }
     
@@ -202,6 +231,7 @@ extension ViewController {
             didWeWin()
             
         } else {
+            
             flipBack(inpTile: firstTile)
             flipBack(inpTile: secondTile)
         }
@@ -212,18 +242,24 @@ extension ViewController {
 
 extension ViewController {
     
-    func flipBack (inpTile: MyLabel) {
-        UIView.transition(with: inpTile, duration: 0.5, options: UIView.AnimationOptions.transitionFlipFromRight, animations: {
-            inpTile.backgroundColor = UIColor.blue
-            inpTile.text = "\(MyLabel.question)"
-        }, completion: nil)
+    func flipBack (inpTile: MyImage) {
+        UIView.transition(with: inpTile, duration: 0.6, options: UIView.AnimationOptions.transitionFlipFromRight, animations: {
+//            inpTile.backgroundColor = UIColor.blue
+            inpTile.image = MyImage.question
+//            inpTile.text = "\(MyImage.question)"
+        }, completion: {(res) in
+            self.aTileIsAnimating = false
+        })
     }
     
-    func flipToSmile (inpTile: MyLabel) {
-        UIView.transition(with: inpTile, duration: 0.5, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
+    func flipToSmile (inpTile: MyImage) {
+        UIView.transition(with: inpTile, duration: 0.6, options: UIView.AnimationOptions.transitionFlipFromLeft, animations: {
             inpTile.backgroundColor = UIColor.cyan
-            inpTile.text = "\(MyLabel.smile)"
-        }, completion: nil)
+            inpTile.image = MyImage.check
+//            inpTile.text = "\(MyImage.check)"
+        }, completion: {(res) in
+            self.aTileIsAnimating = false
+        })
     }
 }
 
@@ -240,5 +276,27 @@ extension ViewController {
             gameWonLabel.isHidden = false
             gameWonLabel.text = txt
         }
+    }
+}
+
+//MARK: - Reset Action
+
+extension ViewController {
+    
+    func resetActionFunction () {
+        gameTime = 0
+        foundTilesArray = []
+        
+        firstTile = nil
+        secondTile = nil
+        compareNow = false
+        
+        for a in tilesArray {
+            a.removeFromSuperview()
+        }
+        
+        makeTiles()
+        randomize()
+        updateTime()
     }
 }

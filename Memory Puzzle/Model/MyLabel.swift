@@ -13,5 +13,13 @@ class MyLabel: UILabel {
     
     static var question = "?"
     static var smile = "☺️"
+}
+
+class MyImage: UIImageView {
+
+    var internalNum: Int!
+    var internalImage: UIImage!
     
+    static var question = UIImage (named: "question.png")
+    static var check = UIImage (named: "check.png")
 }
